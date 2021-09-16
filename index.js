@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { async } = require('regenerator-runtime')
 
 
 async function getFolderNames() {
@@ -30,11 +31,21 @@ async function enterAllLocationFile(locationsPath) {
                 filteredFile.forEach(file =>{
                     let monthPath = path.join(yearPath, file)
                     fs.readdir(monthPath, (err, files) => {
-                        console.log(files)
+                        let filteredFile = files.filter(file => !Number.isNaN(parseInt(file, 10)))
+                        filteredFile.forEach(file =>{
+                            let filePath = path.join(monthPath, file)
+                            loadLocationHTMLFile(filePath)
+                        })
                     })
                 })
             })
         })
+    })
+}
+
+async function loadLocationHTMLFile(filePath) {
+    fs.readFile(filePath, 'utf-8', (err, data)=> {
+        console.log(data)
     })
 }
 

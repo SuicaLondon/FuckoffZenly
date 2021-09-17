@@ -1,6 +1,8 @@
 const fs = require('fs')
 const path = require('path')
 const { async } = require('regenerator-runtime')
+const jsdom = require('jsdom')
+const {JSDOM} = jsdom
 
 
 async function getFolderNames() {
@@ -33,8 +35,7 @@ async function enterAllLocationFile(locationsPath) {
                     fs.readdir(monthPath, (err, files) => {
                         let filteredFile = files.filter(file => !Number.isNaN(parseInt(file, 10)))
                         filteredFile.forEach(file =>{
-                            let filePath = path.join(monthPath, file)
-                            loadLocationHTMLFile(filePath)
+                            loadLocationHTMLFile(monthPath, file)
                         })
                     })
                 })
@@ -43,9 +44,24 @@ async function enterAllLocationFile(locationsPath) {
     })
 }
 
-async function loadLocationHTMLFile(filePath) {
+async function loadLocationHTMLFile(monthPath, file) {
+    let filePath = path.join(monthPath, file)
+    let date = file.slice(0, -5)
     fs.readFile(filePath, 'utf-8', (err, data)=> {
-        console.log(data)
+        const dom = new JSDOM(data)
+        let nodeList = dom.window.document.querySelectorAll('tbody tr')
+        nodeList.forEach(tr=>{
+            const locationData = {
+                date: date,
+                time: tr.children[0].textContent,
+                latitude: tr.children[1].textContent,
+                longitude: tr.children[2].textContent,
+                altitude: tr.children[3].textContent,
+                bearing: tr.children[4].textContent,
+                speed: tr.children[5].textContent,
+            }
+            console.log(locationData)
+        })
     })
 }
 

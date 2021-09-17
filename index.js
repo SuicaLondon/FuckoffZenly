@@ -36,10 +36,16 @@ async function enterAllLocationFile(locationsPath) {
     await enterFolder(locationsPath, './', async (path, file)=>{
         await enterFolder(path, file, async (path, file) => {
             await enterFolder(path, file, async (path, file) => {
-                tasks.push({monthPath, dayFile})
+                tasks.push({path, file})
             })
         })
     })
+    // console.time()
+    // Promise.all(tasks.map(task=>loadLocationHTMLFile(task.path, task.file)))
+    //     .then(()=>{
+    //         console.log(locations.length)
+    //         console.timeEnd()
+    //     })
 }
 
 async function enterFolder(fatherPath, folder, callback) {
@@ -69,11 +75,13 @@ function loadLocationHTMLFile(monthPath, file) {
                     bearing: tr.children[4].textContent,
                     speed: tr.children[5].textContent,
                 }
+                locations.push(locationData)
                 resolve(locationData)
             })
         })
     })
 }
+
 
 !async function(){
     let folderNames = await getFolderNames()

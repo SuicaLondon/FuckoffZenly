@@ -31,23 +31,24 @@ async function directToLocation(names) {
 }
 
 async function enterAllLocationFile(locationsPath) {
-    let yearsFiles = await readdirPromise(locationsPath)
-    yearsFiles = yearsFiles.filter(file => !Number.isNaN(parseInt(file, 10)))
-    yearsFiles.forEach(async yearFile=>{
-        let yearPath = path.join(locationsPath, yearFile)
-        let monthFiles = await readdirPromise(yearPath)
-        monthFiles = monthFiles.filter(file => !Number.isNaN(parseInt(file, 10)))
-        monthFiles.forEach(async monthFile=>{
-            let monthPath = path.join(yearPath, monthFile)
-            let dayFiles = await readdirPromise(monthPath)
-            dayFiles = dayFiles.filter(file => !Number.isNaN(parseInt(file, 10)))
-            dayFiles.forEach(async dayFile=>{
-                let locationData = await loadLocationHTMLFile(monthPath, dayFile)
-                locations.push(locationData)
-                console.log(locations.length)
+    let tasks = []
+    console.log('=========')
+    await enterFolder(locationsPath, './', async (path, file)=>{
+        await enterFolder(path, file, async (path, file) => {
+            await enterFolder(path, file, async (path, file) => {
+                tasks.push({monthPath, dayFile})
             })
         })
     })
+}
+
+async function enterFolder(fatherPath, folder, callback) {
+    let currentPath = path.join(fatherPath, folder)
+    let files = await readdirPromise(currentPath)
+    files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
+    return Promise.all(files.map(async file=>{
+        return callback(currentPath, file)  
+    }))
 }
 
 function loadLocationHTMLFile(monthPath, file) {

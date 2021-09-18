@@ -40,6 +40,15 @@ async function enterAllLocationFile(locationsPath) {
             })
         })
     })
+    let task = tasks[5]
+    Promise.all([loadLocationHTMLFile(task.path, task.file)])
+        .then(()=>{
+            console.log(locations)
+            let gpx = convertToGPX(locations)
+            let name = task.file.slice(0, -5)
+            writeGPX(name, gpx)
+        })
+
     // console.time()
     // Promise.all(tasks.map(task=>loadLocationHTMLFile(task.path, task.file)))
     //     .then(()=>{
@@ -78,6 +87,34 @@ function loadLocationHTMLFile(monthPath, file) {
                 locations.push(locationData)
                 resolve(locationData)
             })
+        })
+    })
+}
+
+function convertToGPX(locations) {
+    return `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <gpx version="1.0">
+        <name>${locations[0].date}</name>
+        <trk><name>Zenly gpx</name><number>1</number><trkseg>
+        ${locations.map(location=>{
+            return `<trkpt lat="${location.latitude}" lon="${location.longitude}"><ele>${location.altitude}</ele><time>${location.date}T${location.time}Z</time></trkpt>`
+        })}
+        </trkseg></trk>
+    </gpx>
+    `
+}
+
+async function writeGPX(name, content) {
+    const dir = `./gpx`
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(dir)){
+            console.log('create')
+            fs.mkdirSync(dir);
+        }
+        fs.writeFile(`${dir}/${name}.gpx`, content, err=>{
+            if (err) reject(err)
+            resolve()
         })
     })
 }

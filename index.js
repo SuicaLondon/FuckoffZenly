@@ -4,8 +4,6 @@ const { async } = require('regenerator-runtime')
 const jsdom = require('jsdom')
 const {JSDOM} = jsdom
 
-const locations = []
-
 function readdirPromise(dir) {
     return new Promise((resolve, reject) => {
         fs.readdir(dir, (err, files) => {
@@ -33,21 +31,23 @@ async function directToLocation(names) {
 async function enterAllLocationFile(locationsPath) {
     let tasks = []
     console.log('=========')
-    await enterFolder(locationsPath, './', async (path, file)=>{
-        await enterFolder(path, file, async (path, file) => {
-            await enterFolder(path, file, async (path, file) => {
+    await enterFolder(locationsPath, './', '2019', async (path, file)=>{
+        await enterFolder(path, file, '12', async (path, file) => {
+            await enterFolders(path, file, async (path, file) => {
+                console.log(path, file)
                 tasks.push({path, file})
             })
         })
     })
-    let task = tasks[5]
-    Promise.all([loadLocationHTMLFile(task.path, task.file)])
-        .then(()=>{
-            console.log(locations)
-            let gpx = convertToGPX(locations)
-            let name = task.file.slice(0, -5)
-            writeGPX(name, gpx)
-        })
+    for(let i=0; i < tasks.length; i++) {
+        let task = tasks[i]
+        let locations = await loadLocationHTMLFile(task.path, task.file)
+        // console.log(locations)
+        let gpx = convertToGPX(locations)
+        let name = task.file.slice(0, -5)
+        await writeGPX(name, gpx)
+        console.log('finish: ', name)
+    }
 
     // console.time()
     // Promise.all(tasks.map(task=>loadLocationHTMLFile(task.path, task.file)))
@@ -56,8 +56,15 @@ async function enterAllLocationFile(locationsPath) {
     //         console.timeEnd()
     //     })
 }
+async function enterFolder(fatherPath, folder, targetName, callback) {
+    let currentPath = path.join(fatherPath, folder)
+    let files = await readdirPromise(currentPath)
+    files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
+    let file = files.find(file => file === targetName)
+    return Promise.all([callback(currentPath, file)])
+}
 
-async function enterFolder(fatherPath, folder, callback) {
+async function enterFolders(fatherPath, folder, callback) {
     let currentPath = path.join(fatherPath, folder)
     let files = await readdirPromise(currentPath)
     files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
@@ -74,21 +81,26 @@ function loadLocationHTMLFile(monthPath, file) {
             if (err) reject(err)
             const dom = new JSDOM(data)
             let nodeList = dom.window.document.querySelectorAll('tbody tr')
+            let locations = []
             nodeList.forEach(tr=>{
                 const locationData = {
                     date: date,
                     time: tr.children[0].textContent,
-                    latitude: tr.children[1].textContent,
-                    longitude: tr.children[2].textContent,
+                    latitude: getRoughData(tr.children[1].textContent),
+                    longitude: getRoughData(tr.children[2].textContent),
                     altitude: tr.children[3].textContent,
                     bearing: tr.children[4].textContent,
                     speed: tr.children[5].textContent,
                 }
                 locations.push(locationData)
-                resolve(locationData)
             })
+            resolve(locations)
         })
     })
+}
+
+function getRoughData(data) {
+    return data.split(' ± ')[0]
 }
 
 function convertToGPX(locations) {

@@ -32,7 +32,7 @@ async function enterAllLocationFile(locationsPath) {
     let tasks = []
     console.log('=========')
     await enterFolder(locationsPath, './', '2019', async (path, file)=>{
-        await enterFolder(path, file, '12', async (path, file) => {
+        await enterFolders(path, file, async (path, file) => {
             await enterFolders(path, file, async (path, file) => {
                 console.log(path, file)
                 tasks.push({path, file})
@@ -109,7 +109,7 @@ function loadLocationHTMLFile(monthPath, file) {
                 if (previous && previous.latitude === locationData.latitude && previous.longitude === locationData.longitude) {
                     continue
                 }
-                if (previous && timeDifferent(locationData.date, previous.date, 120000)) {
+                if (previous && timeDifferent(locationData.date, previous.date, 180000)) {
                     console.log('different', previous.latitude, locationData.latitude, ' | ', previous.longitude, locationData.longitude)
                     locations.push([locationData])
                     previous = locationData

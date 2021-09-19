@@ -42,11 +42,17 @@ async function enterAllLocationFile(locationsPath) {
     for(let i=0; i < tasks.length; i++) {
         let task = tasks[i]
         let locations = await loadLocationHTMLFile(task.path, task.file)
-        // console.log(locations)
-        let gpx = convertToGPX(locations)
-        let name = task.file.slice(0, -5)
-        await writeGPX(name, gpx)
-        console.log('finish: ', name)
+        console.log(locations.length)
+        console.log(locations.flat().length)
+        for (let i = 0; i < locations.length; i++) {
+            let gpx = convertToGPX(locations[i])
+            let name = task.file.slice(0, -5)
+            if (i > 0) {
+                name = name + `(${i})`
+            }
+            await writeGPX(name, gpx)
+            console.log('finish: ', name)
+        }
     }
 
     // console.time()
@@ -82,9 +88,13 @@ function loadLocationHTMLFile(monthPath, file) {
             const dom = new JSDOM(data)
             let nodeList = dom.window.document.querySelectorAll('tbody tr')
             let locations = []
-            nodeList.forEach(tr=>{
+            let previous = null
+            console.log(nodeList.length)
+            for(let i = 0; i < nodeList.length; i++) {
+                const tr = nodeList[i]
                 const locationData = {
-                    date: date,
+                    date: new Date(date + " " + tr.children[0].textContent),
+                    dateTime: date,
                     time: tr.children[0].textContent,
                     latitude: getRoughData(tr.children[1].textContent),
                     longitude: getRoughData(tr.children[2].textContent),
@@ -92,8 +102,24 @@ function loadLocationHTMLFile(monthPath, file) {
                     bearing: tr.children[4].textContent,
                     speed: tr.children[5].textContent,
                 }
-                locations.push(locationData)
-            })
+                if (locations.length === 0) {
+                    locations.push([locationData])
+                    continue
+                }
+                if (previous && previous.latitude === locationData.latitude && previous.longitude === locationData.longitude) {
+                    continue
+                }
+                if (previous && timeDifferent(locationData.date, previous.date, 120000)) {
+                    console.log('different', previous.latitude, locationData.latitude, ' | ', previous.longitude, locationData.longitude)
+                    locations.push([locationData])
+                    previous = locationData
+                } else {
+                    let location = locations[locations.length - 1]
+                    location.push(locationData)
+                    locations[locations.length - 1] = location
+                    previous = locationData
+                }
+            }
             resolve(locations)
         })
     })
@@ -107,7 +133,7 @@ function convertToGPX(locations) {
     return `
     <?xml version="1.0" encoding="UTF-8"?>
     <gpx version="1.0">
-        <name>${locations[0].date}</name>
+        <name>${locations[0].dateTime}</name>
         <trk><name>Zenly gpx</name><number>1</number><trkseg>
         ${locations.map(location=>{
             return `<trkpt lat="${location.latitude}" lon="${location.longitude}"><ele>${location.altitude}</ele><time>${location.date}T${location.time}Z</time></trkpt>`
@@ -115,6 +141,10 @@ function convertToGPX(locations) {
         </trkseg></trk>
     </gpx>
     `
+}
+
+function timeDifferent(date1, date2, lag) {
+    return Math.abs(date1.getTime() - date2.getTime()) > lag
 }
 
 async function writeGPX(name, content) {

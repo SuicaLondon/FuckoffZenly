@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "babel-node --max-old-space-size=8192 index.js"
+    "start": "node --max-old-space-size=8192 index.js "
   },
   "dependencies": {
     "babel-preset-env": "^1.7.0",

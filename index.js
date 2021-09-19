@@ -31,7 +31,7 @@ async function directToLocation(names) {
 async function enterAllLocationFile(locationsPath) {
     let tasks = []
     console.log('=========')
-    await enterFolder(locationsPath, './', '2019', async (path, file)=>{
+    await enterFolders(locationsPath, './', async (path, file)=>{
         await enterFolders(path, file, async (path, file) => {
             await enterFolders(path, file, async (path, file) => {
                 console.log(path, file)
@@ -109,8 +109,8 @@ function loadLocationHTMLFile(monthPath, file) {
                 if (previous && previous.latitude === locationData.latitude && previous.longitude === locationData.longitude) {
                     continue
                 }
-                if (previous && timeDifferent(locationData.date, previous.date, 180000)) {
-                    console.log('different', previous.latitude, locationData.latitude, ' | ', previous.longitude, locationData.longitude)
+                if (previous && timeDifferent(locationData.date, previous.date, 15 * 60000)) {
+                    // console.log('different', previous.latitude, locationData.latitude, ' | ', previous.longitude, locationData.longitude)
                     locations.push([locationData])
                     previous = locationData
                 } else {

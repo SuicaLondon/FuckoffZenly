@@ -1,83 +1,10 @@
+import Reader from "./src/reader"
+
 const fs = require('fs')
 const path = require('path')
 const { async } = require('regenerator-runtime')
 const jsdom = require('jsdom')
 const {JSDOM} = jsdom
-
-function readdirPromise(dir) {
-    return new Promise((resolve, reject) => {
-        fs.readdir(dir, (err, files) => {
-            if(err) reject(err)
-            resolve(files)
-        })
-    })
-}
-
-async function getFolderNames() {
-    let files = await readdirPromise('./')
-    return files.filter(file => file.includes('Zenly Data'))
-}
-
-
-async function directToLocation(names) {
-    return new Promise((resolve, reject)=> {
-        names.forEach(async name => {
-            let locationsPath = path.join(__dirname, name, 'locations')
-            await enterAllLocationFile(locationsPath)
-        })
-    })
-}
-
-async function enterAllLocationFile(locationsPath) {
-    let tasks = []
-    console.log('=========')
-    await enterFolders(locationsPath, './', async (path, file)=>{
-        await enterFolders(path, file, async (path, file) => {
-            await enterFolders(path, file, async (path, file) => {
-                console.log(path, file)
-                tasks.push({path, file})
-            })
-        })
-    })
-    for(let i=0; i < tasks.length; i++) {
-        let task = tasks[i]
-        let locations = await loadLocationHTMLFile(task.path, task.file)
-        console.log(locations.length)
-        console.log(locations.flat().length)
-        for (let i = 0; i < locations.length; i++) {
-            let gpx = convertToGPX(locations[i])
-            let name = task.file.slice(0, -5)
-            if (i > 0) {
-                name = name + `(${i})`
-            }
-            await writeGPX(name, gpx)
-            console.log('finish: ', name)
-        }
-    }
-
-    // console.time()
-    // Promise.all(tasks.map(task=>loadLocationHTMLFile(task.path, task.file)))
-    //     .then(()=>{
-    //         console.log(locations.length)
-    //         console.timeEnd()
-    //     })
-}
-async function enterFolder(fatherPath, folder, targetName, callback) {
-    let currentPath = path.join(fatherPath, folder)
-    let files = await readdirPromise(currentPath)
-    files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
-    let file = files.find(file => file === targetName)
-    return Promise.all([callback(currentPath, file)])
-}
-
-async function enterFolders(fatherPath, folder, callback) {
-    let currentPath = path.join(fatherPath, folder)
-    let files = await readdirPromise(currentPath)
-    files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
-    return Promise.all(files.map(async file=>{
-        return callback(currentPath, file)  
-    }))
-}
 
 function loadLocationHTMLFile(monthPath, file) {
     let filePath = path.join(monthPath, file)
@@ -163,6 +90,7 @@ async function writeGPX(name, content) {
 
 
 !async function(){
-    let folderNames = await getFolderNames()
-    directToLocation(folderNames)
+    var reader = new Reader();
+    let folderNames = await reader.getFolderNames('./', 'Zenly Data')
+    reader.directToLocation(folderNames)
 }()

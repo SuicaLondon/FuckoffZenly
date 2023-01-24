@@ -18,16 +18,14 @@ export default class Reader {
 
 
     async directToLocation(names: string[]) {
-        return new Promise((resolve, reject) => {
-            names.forEach(async name => {
-                let locationsPath = path.join(__dirname, name, 'locations')
-                await this.enterAllLocationFile(locationsPath)
-            })
+        names.forEach(async name => {
+            let locationsPath = path.join(__dirname, name, 'locations')
+            await this.enterAllLocationFile(locationsPath)
         })
     }
 
-    async enterAllLocationFile(locationsPath) {
-        let tasks = []
+    async enterAllLocationFile(locationsPath: string) {
+        let tasks: Task[] = []
         console.log('=========')
         await this.enterFolders(locationsPath, './', async (path, file) => {
             await this.enterFolders(path, file, async (path, file) => {
@@ -37,21 +35,21 @@ export default class Reader {
                 })
             })
         })
-        for (let i = 0; i < tasks.length; i++) {
-            let task = tasks[i]
-            let locations = await loadLocationHTMLFile(task.path, task.file)
-            console.log(locations.length)
-            console.log(locations.flat().length)
-            for (let i = 0; i < locations.length; i++) {
-                let gpx = convertToGPX(locations[i])
-                let name = task.file.slice(0, -5)
-                if (i > 0) {
-                    name = name + `(${i})`
-                }
-                await writeGPX(name, gpx)
-                console.log('finish: ', name)
-            }
-        }
+        // for (let i = 0; i < tasks.length; i++) {
+        //     let task = tasks[i]
+        //     let locations = await loadLocationHTMLFile(task.path, task.file)
+        //     console.log(locations.length)
+        //     console.log(locations.flat().length)
+        //     for (let i = 0; i < locations.length; i++) {
+        //         let gpx = convertToGPX(locations[i])
+        //         let name = task.file.slice(0, -5)
+        //         if (i > 0) {
+        //             name = name + `(${i})`
+        //         }
+        //         await writeGPX(name, gpx)
+        //         console.log('finish: ', name)
+        //     }
+        // }
 
         // console.time()
         // Promise.all(tasks.map(task=>loadLocationHTMLFile(task.path, task.file)))
@@ -60,7 +58,7 @@ export default class Reader {
         //         console.timeEnd()
         //     })
     }
-    async enterFolder(fatherPath, folder, targetName, callback) {
+    async enterFolder(fatherPath: string, folder: string, targetName: string, callback: (currentPath: string, file: string) => Promise<any>) {
         let currentPath = path.join(fatherPath, folder)
         let files = await this.readDir(currentPath)
         files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
@@ -68,7 +66,7 @@ export default class Reader {
         return Promise.all([callback(currentPath, file)])
     }
 
-    async enterFolders(fatherPath, folder, callback) {
+    async enterFolders(fatherPath: string, folder: string, callback: (currentPath: string, file: string) => Promise<any>) {
         let currentPath = path.join(fatherPath, folder)
         let files = await this.readDir(currentPath)
         files = files.filter(file => !Number.isNaN(parseInt(file, 10)))

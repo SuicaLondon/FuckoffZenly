@@ -4,6 +4,7 @@
     "start": "NODE_OPTIONS='--max-old-space-size=8192' ts-node-esm index.ts "
   },
   "dependencies": {
+    "app-root-path": "^3.1.0",
     "babel-preset-env": "^1.7.0",
     "jsdom": "^17.0.0"
   },

@@ -1,10 +1,12 @@
+import appRootPath from "app-root-path";
 import Reader from "./src/reader"
 import { Task } from "./src/zenly.type";
 
 !async function(){
-    let reader = new Reader();
-    let folderNames = await reader.getFolderNames('./', 'Zenly Data')
-    let tasks: Task[] = await reader.directToLocation(folderNames)
+    let reader = new Reader()
+    let rootPath = appRootPath.path
+    let folderNames = await reader.getFolderNames(rootPath, 'Zenly Data')
+    let tasks: Task[] = await reader.directToLocation(rootPath, folderNames)
     console.log(tasks)
 
     // for (let i = 0; i < tasks.length; i++) {

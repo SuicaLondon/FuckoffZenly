@@ -13,24 +13,25 @@ export default class Reader {
     }
 
     async getFolderNames(path: string, fileName: string): Promise<string[]> {
-        let files = await this.readDir('./') as any[]
-        return files.filter(file => file.includes('Zenly Data'))
+        let files = await this.readDir(path) as any[]
+        return files.filter(file => file.includes(fileName))
     }
 
 
-    async directToLocation(names: string[]): Promise<Task[]> {
+    async directToLocation(rootPath: string, names: string[]): Promise<Task[]> {
         let tasks = await Promise.all(names.map(async name => {
-            let locationsPath = path.join(__dirname, name, 'locations')
+            let locationsPath = path.join(rootPath, name, 'locations')
             return await this.enterAllLocationFile(locationsPath)
         }))
         return tasks.flat()
     }
 
-    async enterAllLocationFile(locationsPath: string): Promise<Task[]> {
+    async enterAllLocationFile(path: string): Promise<Task[]> {
         let tasks: Task[] = []
-        console.log('=========')
-        await this.enterFolders(locationsPath, './', async (path, file) => {
+        await this.enterFolders(path, './', async (path, file) => {
+            console.log(path, file)
             await this.enterFolders(path, file, async (path, file) => {
+                console.log(path, file)
                 await this.enterFolders(path, file, async (path, file) => {
                     console.log(path, file)
                     tasks.push({ path, file })
@@ -48,7 +49,9 @@ export default class Reader {
     }
 
     async enterFolders(fatherPath: string, folder: string, callback: (currentPath: string, file: string) => Promise<any>) {
+        console.log('fatherPath', fatherPath, folder)
         let currentPath = path.join(fatherPath, folder)
+        console.log(currentPath)
         let files = await this.readDir(currentPath)
         files = files.filter(file => !Number.isNaN(parseInt(file, 10)))
         return Promise.all(files.map(async file => {

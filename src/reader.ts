@@ -1,5 +1,6 @@
 import { PathLike, readdir } from "fs";
 import path = require("path");
+import { Task } from "./zenly.type";
 
 export default class Reader {
     readDir(dir: PathLike): Promise<string[]> {
@@ -17,14 +18,15 @@ export default class Reader {
     }
 
 
-    async directToLocation(names: string[]) {
-        names.forEach(async name => {
+    async directToLocation(names: string[]): Promise<Task[]> {
+        let tasks = await Promise.all(names.map(async name => {
             let locationsPath = path.join(__dirname, name, 'locations')
-            await this.enterAllLocationFile(locationsPath)
-        })
+            return await this.enterAllLocationFile(locationsPath)
+        }))
+        return tasks.flat()
     }
 
-    async enterAllLocationFile(locationsPath: string) {
+    async enterAllLocationFile(locationsPath: string): Promise<Task[]> {
         let tasks: Task[] = []
         console.log('=========')
         await this.enterFolders(locationsPath, './', async (path, file) => {
@@ -35,28 +37,7 @@ export default class Reader {
                 })
             })
         })
-        // for (let i = 0; i < tasks.length; i++) {
-        //     let task = tasks[i]
-        //     let locations = await loadLocationHTMLFile(task.path, task.file)
-        //     console.log(locations.length)
-        //     console.log(locations.flat().length)
-        //     for (let i = 0; i < locations.length; i++) {
-        //         let gpx = convertToGPX(locations[i])
-        //         let name = task.file.slice(0, -5)
-        //         if (i > 0) {
-        //             name = name + `(${i})`
-        //         }
-        //         await writeGPX(name, gpx)
-        //         console.log('finish: ', name)
-        //     }
-        // }
-
-        // console.time()
-        // Promise.all(tasks.map(task=>loadLocationHTMLFile(task.path, task.file)))
-        //     .then(()=>{
-        //         console.log(locations.length)
-        //         console.timeEnd()
-        //     })
+        return tasks
     }
     async enterFolder(fatherPath: string, folder: string, targetName: string, callback: (currentPath: string, file: string) => Promise<any>) {
         let currentPath = path.join(fatherPath, folder)

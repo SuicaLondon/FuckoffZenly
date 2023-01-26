@@ -1,6 +1,7 @@
 {
+  "main": "index.ts",
   "scripts": {
-    "start": "node --max-old-space-size=8192 index.js "
+    "start": "NODE_OPTIONS='--max-old-space-size=8192' ts-node-esm index.ts "
   },
   "dependencies": {
     "babel-preset-env": "^1.7.0",

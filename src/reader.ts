@@ -1,6 +1,6 @@
 import { PathLike, readdir } from "fs";
 import path = require("path");
-import { Task } from "./zenly.type";
+import { Task } from "./Zenly.type";
 
 export default class Reader {
     readDir(dir: PathLike): Promise<string[]> {

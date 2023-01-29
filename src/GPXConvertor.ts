@@ -3,13 +3,41 @@ import fs = require('fs')
 import path = require('path')
 import jsdom = require('jsdom')
 import { PathLike } from 'fs'
-import { Location } from './zenly.type'
+import { Location, Task } from './Zenly.type'
 const { JSDOM } = jsdom
 
-class GPXConvertor {
-    loadLocationHTMLFile(monthPath, file) {
-        let filePath = path.join(monthPath, file)
-        let date = file.slice(0, -5)
+export default class GPXConvertor {
+
+    async convertHTML(dir: PathLike, tasks: Task[]) {
+        for (let i = 0; i < tasks.length; i++) {
+            let task = tasks[i]
+            let locations = await this.loadLocationHTMLFile(task.path, task.file)
+            console.log(locations.length)
+            console.log(locations.flat().length)
+            let gpxs: string[] = []
+            for (let i = 0; i < locations.length; i++) {
+                let gpx = this.convertToGPX(locations[i])
+                let name = task.file.slice(0, -5)
+                if (i > 0) {
+                    name = name + `(${i})`
+                }
+                await this.writeGPX(dir, name, gpx)
+                console.log('finish: ', name)
+            }
+            
+        }
+
+        // console.time()
+        // Promise.all(tasks.map(task=>this.loadLocationHTMLFile(task.path, task.file)))
+        //     .then(()=>{
+        //         console.log(locations.length)
+        //         console.timeEnd()
+        //     })
+    }
+
+    loadLocationHTMLFile(monthPath: string, fileName: string): Promise<Location[][]> {
+        let filePath = path.join(monthPath, fileName)
+        let date = fileName.slice(0, -5) // Remove .html
         return new Promise((resolve, reject) => {
             fs.readFile(filePath, 'utf-8', (err, data) => {
                 if (err) reject(err)

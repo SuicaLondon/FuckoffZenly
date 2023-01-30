@@ -54,8 +54,8 @@ export default class GPXConvertor {
                         speed: tr.children[5].textContent,
                     }
                     if (locationMatrix.length === 0) {
-                        console.log(`${date} length is 0`)
                         locationMatrix.push([locationData])
+                        previous = locationData
                         continue
                     }
                     if (previous) {
@@ -103,13 +103,13 @@ export default class GPXConvertor {
     }
 
     getLatitudeRoughData(data: string): number {
-        const dataList = data.split(' ± ')[0]
-        const precision = parseFloat(dataList[1].replace('.', '')) * this.latPerMeter
+        const dataList = data.split(' ± ')
+        const precision = parseFloat(dataList[1]) * this.latPerMeter
         return parseFloat(dataList[0]) + precision
     }
     getLongitudeRoughData(data: string): number {
-        const dataList = data.split(' ± ')[0]
-        const precision = parseFloat(dataList[1].replace('.', '')) * this.longPerMeter
+        const dataList = data.split(' ± ')
+        const precision = parseFloat(dataList[1]) * this.longPerMeter
         return parseFloat(dataList[0]) + precision
     }
 

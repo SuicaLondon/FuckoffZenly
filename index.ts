@@ -8,8 +8,8 @@ import { Task } from "./src/Zenly.type"
     const reader = new Reader()
     const convertor = new GPXConvertor()
     let rootPath = appRootPath.path
-    let folderNames = await reader.getFolderNames(rootPath, 'Zenly Data')
+    let folderNames = await reader.getFolderNames(rootPath, 'Fantasy Zenly Data')
     let tasks: Task[] = await reader.directToLocation(rootPath, folderNames)
     console.log(tasks)
-    convertor.convertHTML(path.join(rootPath, 'Test'), tasks)
+    convertor.convertHTML(path.join(rootPath, 'Import'), tasks)
 }()

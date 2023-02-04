@@ -4,6 +4,7 @@ import path = require('path')
 import jsdom = require('jsdom')
 import { PathLike } from 'fs'
 import { Location, Task } from './Zenly.type'
+import linearRegression from './LinearRegression'
 const { JSDOM } = jsdom
 
 export default class GPXConvertor {
@@ -47,8 +48,8 @@ export default class GPXConvertor {
                         date: new Date(date + " " + tr.children[0].textContent),
                         dateTime: date,
                         time: tr.children[0].textContent,
-                        latitude: this.getLatitudeRoughData(tr.children[1].textContent),
-                        longitude: this.getLongitudeRoughData(tr.children[2].textContent),
+                        latitude: this.getRoughData(tr.children[1].textContent),
+                        longitude: this.getRoughData(tr.children[2].textContent),
                         altitude: parseFloat(tr.children[3].textContent),
                         bearing: tr.children[4].textContent,
                         speed: tr.children[5].textContent,
@@ -58,11 +59,13 @@ export default class GPXConvertor {
                         previous = locationData
                         continue
                     }
+
+                    
                     if (previous) {
                         if (previous.latitude === locationData.latitude && previous.longitude === locationData.longitude) {
                             continue
                         }
-
+ 
                         if (previous.date === locationData.date) { // anti-aliasing, it has multiple data in 1 second
                             if (bufferList.length === 0) {
                                 bufferList = [previous, locationData]
@@ -72,15 +75,15 @@ export default class GPXConvertor {
                             continue
                         } else {
                             if (bufferList.length > 0) {
-                                let sumLat: number, sumLong: number
+                                bufferList.push(locationData)
+                                const linReg = linearRegression(bufferList, 'latitude', 'longitude')
                                 for (let i = 0; i < bufferList.length; i++) {
-                                    sumLat = bufferList[i].latitude
-                                    sumLong = bufferList[i].longitude
+                                    let noiceLocationData = JSON.parse(JSON.stringify(locationData))
+                                    noiceLocationData.longitude = linReg(noiceLocationData.latitude)
+                                    bufferList.splice(i, 0, noiceLocationData)
                                 }
-                                locationData.latitude = sumLat / bufferList.length
-                                locationData.longitude = sumLong / bufferList.length
+                                locationMatrix.push(bufferList)
                                 bufferList = []
-                                locationMatrix[locationMatrix.length - 1].push(locationData)
                                 previous = locationData
                                 continue
                             }
@@ -102,15 +105,9 @@ export default class GPXConvertor {
         })
     }
 
-    getLatitudeRoughData(data: string): number {
+    getRoughData (data: string): number {
         const dataList = data.split(' ± ')
-        const precision = parseFloat(dataList[1]) * this.latPerMeter
-        return parseFloat(dataList[0]) + precision
-    }
-    getLongitudeRoughData(data: string): number {
-        const dataList = data.split(' ± ')
-        const precision = parseFloat(dataList[1]) * this.longPerMeter
-        return parseFloat(dataList[0]) + precision
+        return parseFloat(dataList[0]) 
     }
 
     convertToGPX(name: string, locationMatrix: Location[][]): string {
